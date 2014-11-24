@@ -16,6 +16,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.*;
+import java.security.cert.Certificate;
+import java.util.Enumeration;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 
 public class MainActivity extends Activity {
@@ -36,21 +40,55 @@ public class MainActivity extends Activity {
         });
     }
 
-    private void log(String message) {
+    private void log(final String message) {
         final String TAG = "com.serwylo.jarverifier.MainActivity";
         Log.d(TAG, message);
         ((TextView)findViewById(R.id.text_log)).append(message + "\n");
     }
 
-    private void verify() {
+    private void verify(File jar) {
 
         log("Beginning verification...");
+
+        try {
+            JarFile jarFile = new JarFile(jar, true);
+            Enumeration<JarEntry> entries = jarFile.entries();
+            while (entries.hasMoreElements()) {
+                JarEntry entry = entries.nextElement();
+                log( "  Verifying " + entry.getName() + "..." );
+
+
+                /*
+                 * JarFile.getInputStream() provides the signature check, even
+                 * though the Android docs do not mention this, the Java docs do
+                 * and Android seems to implement it the same:
+                 * http://docs.oracle.com/javase/6/docs/api/java/util/jar/JarFile.html#getInputStream(java.util.zip.ZipEntry)
+                 * https://developer.android.com/reference/java/util/jar/JarFile.html#getInputStream(java.util.zip.ZipEntry)
+                 */
+                InputStream tmpInput = jarFile.getInputStream(entry);
+                StreamUtils.closeQuietly(tmpInput);
+
+
+                Certificate[] certs = entry.getCertificates();
+                if ( certs == null ) {
+                    log( "  * NO CERTS FOUND!" );
+                    Toast.makeText(this, "No certificates found in " + jar.getName() + "!", Toast.LENGTH_LONG ).show();
+                } else {
+                    log( "    * Found " + certs.length + " certs" );
+                }
+            }
+        } catch (IOException e) {
+            log( "Error verifying: " + e);
+        }
+
+
     }
 
     private void downloadAndVerify(final String url) {
-        new AsyncTask<Void, Void, Void>() {
+        new AsyncTask<Void, String, Void>() {
 
             private String error;
+            private File file;
 
             @Override
             protected void onPostExecute(Void aVoid) {
@@ -59,13 +97,18 @@ public class MainActivity extends Activity {
                     log("ERROR: " + error);
                     Toast.makeText(MainActivity.this, error, Toast.LENGTH_LONG).show();
                 } else {
-                    verify();
+                    verify(file);
                 }
 
             }
 
+            @Override
+            protected void onProgressUpdate(String... values) {
+                log(values[0]);
+            }
+
             private File prepareFile(URL url) {
-                return prepareFile(url.getFile());
+                return prepareFile(new File(url.getFile()).getName());
             }
 
             private File prepareFile(String fileName) {
@@ -92,13 +135,13 @@ public class MainActivity extends Activity {
 
                 try {
                     URL urlToDownload = new URL(url);
-                    File file = prepareFile(urlToDownload);
+                    file = prepareFile(urlToDownload);
+                    publishProgress("Downloading " + url + " to " + file.getName() + "...");
                     URLConnection conn = urlToDownload.openConnection();
                     input = conn.getInputStream();
-                    output = new FileOutputStream(file);
-                    log("Downloading " + url + " to " + file.getName() + "...");
+                    output = openFileOutput(file.getName(), MODE_PRIVATE);
                     StreamUtils.copy(input, output);
-                    log("Download complete!");
+                    publishProgress("Download complete!");
                 } catch (MalformedURLException e) {
                     error = url + " is not a valid URL.";
                 } catch (IOException e) {
