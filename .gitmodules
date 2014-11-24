@@ -1,0 +1,3 @@
+[submodule "extern/spongycastle"]
+	path = extern/spongycastle
+	url = https://github.com/open-keychain/spongycastle
