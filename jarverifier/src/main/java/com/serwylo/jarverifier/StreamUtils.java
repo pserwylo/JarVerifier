@@ -25,7 +25,7 @@ public class StreamUtils {
         }
     }
 
-    public static void vacuumStream(InputStream input) throws IOException {
+    public static void consume(InputStream input) throws IOException {
         byte[] buffer = new byte[4096];
         int read = input.read(buffer);
         while (read != -1) {

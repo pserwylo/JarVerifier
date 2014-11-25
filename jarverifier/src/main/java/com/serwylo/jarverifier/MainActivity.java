@@ -22,7 +22,11 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
-
+/**
+ * Toy program which is used to reproduce a bug on Android 5.0
+ * whereby signature verification fails when using a different
+ * security provider to that bundled with Android.
+ */
 public class MainActivity extends Activity {
 
     private BouncyCastleProvider provider = new BouncyCastleProvider();
@@ -131,7 +135,7 @@ public class MainActivity extends Activity {
          * https://developer.android.com/reference/java/util/jar/JarFile.html#getInputStream(java.util.zip.ZipEntry)
          */
         InputStream tmpInput = file.getInputStream(entry);
-        StreamUtils.vacuumStream(tmpInput);
+        StreamUtils.consume(tmpInput);
         StreamUtils.closeQuietly(tmpInput);
 
 
