@@ -17,8 +17,7 @@ public class StreamUtils {
     }
 
     public static void copy(InputStream input, OutputStream output) throws IOException {
-        final int BUFFER_SIZE = 4096;
-        byte[] buffer = new byte[BUFFER_SIZE];
+        byte[] buffer = new byte[4096];
         int read = input.read(buffer);
         while (read != -1) {
             output.write(buffer, 0, read);
@@ -26,4 +25,11 @@ public class StreamUtils {
         }
     }
 
+    public static void vacuumStream(InputStream input) throws IOException {
+        byte[] buffer = new byte[4096];
+        int read = input.read(buffer);
+        while (read != -1) {
+            read = input.read(buffer);
+        }
+    }
 }
