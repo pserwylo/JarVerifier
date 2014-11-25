@@ -37,6 +37,19 @@
         android:layout_height="wrap_content"
         android:text="Download and Verify"/>
 
+    <CheckBox
+        android:id="@+id/check_bouncy_castle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Use 3rd party BouncyCastle" />
+
+    <CheckBox
+        android:id="@+id/check_bouncy_castle_first"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:enabled="false"
+        android:text="Prefer 3rd party BouncyCastle" />
+
     <ScrollView
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"

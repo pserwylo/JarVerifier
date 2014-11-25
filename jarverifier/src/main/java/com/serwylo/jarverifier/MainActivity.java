@@ -7,12 +7,14 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.*;
+import org.spongycastle.jce.provider.BouncyCastleProvider;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.*;
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.util.Map;
 import java.util.jar.Attributes;
@@ -23,12 +25,16 @@ import java.util.jar.Manifest;
 
 public class MainActivity extends Activity {
 
+    private BouncyCastleProvider provider = new BouncyCastleProvider();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         final Button btnDownload = (Button)findViewById(R.id.btn_verify);
+        final CheckBox check     = (CheckBox)findViewById(R.id.check_bouncy_castle);
+        final CheckBox prefer    = (CheckBox)findViewById(R.id.check_bouncy_castle_first);
         final EditText inputUri  = (EditText)findViewById(R.id.input_uri);
 
         btnDownload.setOnClickListener(new View.OnClickListener() {
@@ -37,6 +43,34 @@ public class MainActivity extends Activity {
                 downloadAndVerify(inputUri.getText().toString());
             }
         });
+
+        check.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if ( isChecked ) {
+                    Security.addProvider(provider);
+                    prefer.setEnabled( true );
+                } else {
+                    Security.removeProvider( provider.getName() );
+                    prefer.setEnabled( false );
+                    prefer.setChecked( false );
+                }
+            }
+        });
+
+        prefer.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if ( isChecked ) {
+                    Security.removeProvider( provider.getName() );
+                    Security.insertProviderAt( provider, 1 );
+                } else {
+                    Security.removeProvider( provider.getName() );
+                    Security.addProvider( provider );
+                }
+            }
+        });
+
     }
 
     private void log(final String message) {
@@ -75,13 +109,15 @@ public class MainActivity extends Activity {
                 verifyJarEntry( jarFile, entryName );
             }
 
+        } catch ( SecurityException e ) {
+            logError( e.getMessage() );
         } catch ( IOException e ) {
             logError( e.getMessage() );
         }
 
     }
 
-    private void verifyJarEntry( JarFile file, String entryName ) throws IOException {
+    private void verifyJarEntry( JarFile file, String entryName ) throws SecurityException, IOException {
 
         log( "  Verifying " + entryName + "..." );
 

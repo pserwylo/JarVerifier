@@ -1,1 +1,4 @@
-include ':jarverifier'
+include ':jarverifier',
+        ':extern:spongycastle:core',
+        ':extern:spongycastle:pkix',
+        ':extern:spongycastle:prov'
